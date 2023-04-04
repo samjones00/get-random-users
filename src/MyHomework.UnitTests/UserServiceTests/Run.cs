@@ -44,18 +44,18 @@ namespace UserServiceTests
                 "]";
 
             _mockApiService.Setup(x => x.GetAsync(It.IsAny<CancellationToken>())).ReturnsAsync(jsonContent);
-            _mockDataProvider.Setup(x => x.WriteAsync(_configurationOptions.DataProviderResponseFileName, jsonContent, true, It.IsAny<CancellationToken>()));
-            _mockDataProvider.Setup(x => x.ReadAsync(_configurationOptions.DataProviderResponseFileName)).ReturnsAsync(multiple);
-            _mockDataProvider.Setup(x => x.WriteAsync(_configurationOptions.DataProviderOutputFileName, expectedResult, false, It.IsAny<CancellationToken>()));
+            _mockDataProvider.Setup(x => x.WriteAsync(_configurationOptions.ResponsesFileName, jsonContent, true, It.IsAny<CancellationToken>()));
+            _mockDataProvider.Setup(x => x.ReadAsync(_configurationOptions.ResponsesFileName)).ReturnsAsync(multiple);
+            _mockDataProvider.Setup(x => x.WriteAsync(_configurationOptions.OutputFileName, expectedResult, false, It.IsAny<CancellationToken>()));
 
             // Act
             await _sut.Run(CancellationToken.None);
 
             // Assert
             _mockApiService.Verify(x => x.GetAsync(It.IsAny<CancellationToken>()), Times.Exactly(_configurationOptions.ApiCallCount));
-            _mockDataProvider.Verify(x => x.WriteAsync(_configurationOptions.DataProviderResponseFileName, jsonContent, true, It.IsAny<CancellationToken>()), Times.Exactly(_configurationOptions.ApiCallCount));
-            _mockDataProvider.Verify(x => x.ReadAsync(_configurationOptions.DataProviderResponseFileName), Times.Once);
-            _mockDataProvider.Verify(x => x.WriteAsync(_configurationOptions.DataProviderOutputFileName, expectedResult, false, It.IsAny<CancellationToken>()), Times.Once);
+            _mockDataProvider.Verify(x => x.WriteAsync(_configurationOptions.ResponsesFileName, jsonContent, true, It.IsAny<CancellationToken>()), Times.Exactly(_configurationOptions.ApiCallCount));
+            _mockDataProvider.Verify(x => x.ReadAsync(_configurationOptions.ResponsesFileName), Times.Once);
+            _mockDataProvider.Verify(x => x.WriteAsync(_configurationOptions.OutputFileName, expectedResult, false, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]

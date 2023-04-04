@@ -16,8 +16,6 @@ namespace MyHomework.UnitTests
             _mockRepository = new MockRepository(MockBehavior.Strict);
         }
 
-        public static IEnumerable<string> NullOrWhiteSpaceStrings() => new List<string> { " ", "", null };
-
         public static void RunGuardClauseChecks<T>()
         {
             var fixture = new Fixture().Customize(new AutoMoqCustomization());

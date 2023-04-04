@@ -41,8 +41,6 @@ namespace ApiServiceTests
 
             _sut = new ApiService(_mockHttpClientFactory.Object, _configurationOptions);
 
-            var mockResponse = MockHelper.Create<ApiResponse>();
-
             // Act
             var act = () => _sut.GetAsync(CancellationToken.None);
 
@@ -56,8 +54,10 @@ namespace ApiServiceTests
             // Arrange
             var mockResponse = MockHelper.Create<ApiResponse>();
 
-            var mockHttpClient = new MockHttpClient.MockHttpClient();
-            mockHttpClient.BaseAddress = new Uri(_configurationOptions.UserServiceBaseUrl);
+            var mockHttpClient = new MockHttpClient.MockHttpClient
+            {
+                BaseAddress = new Uri(_configurationOptions.UserServiceBaseUrl)
+            };
 
             mockHttpClient
                 .When(_configurationOptions.UserServiceGetEndpoint)

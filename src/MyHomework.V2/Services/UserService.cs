@@ -33,7 +33,7 @@ namespace MyHomework.Services
             var result = JsonConvert.SerializeObject(mappedUsers, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
 
             _logger.LogInformation("Writing user results", result);
-            _dataProvider.WriteAsync(_configurationOptions.DataProviderOutputFileName, result, append: false, cancellationToken);
+            _dataProvider.WriteAsync(_configurationOptions.OutputFileName, result, append: false, cancellationToken);
         }
 
         private async Task SendRequests(CancellationToken cancellationToken)
@@ -41,13 +41,13 @@ namespace MyHomework.Services
             for (int i = 0; i < _configurationOptions.ApiCallCount; i++)
             {
                 var response = await _apiService.GetAsync(cancellationToken);
-                _dataProvider.WriteAsync(_configurationOptions.DataProviderResponseFileName, response, append: true, cancellationToken);
+                _dataProvider.WriteAsync(_configurationOptions.ResponsesFileName, response, append: true, cancellationToken);
             }
         }
 
         private async Task<IEnumerable<ApiResponse.User>> CombineResponses()
         {
-            var json = await _dataProvider.ReadAsync(_configurationOptions.DataProviderResponseFileName);
+            var json = await _dataProvider.ReadAsync(_configurationOptions.ResponsesFileName);
             var responses = json.Split(Environment.NewLine).Take(_configurationOptions.ApiCallCount);
 
             return responses.SelectMany(x => JsonConvert.DeserializeObject<ApiResponse>(x).Results);
