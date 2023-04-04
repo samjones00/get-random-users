@@ -1,12 +1,12 @@
 ﻿using System.Net;
+using FluentAssertions;
+using MockHttpClient;
 using Moq;
 using MyHomework.Constants;
+using MyHomework.Models;
 using MyHomework.Models.Configuration;
 using MyHomework.Services;
 using MyHomework.UnitTests;
-using MockHttpClient;
-using MyHomework.Models;
-using FluentAssertions;
 
 namespace ApiServiceTests
 {

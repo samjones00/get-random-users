@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace MyHomework.Models.Configuration
+﻿namespace MyHomework.Models.Configuration
 {
     public class ConfigurationOptions
     {
