@@ -4,7 +4,7 @@
 name: .NET
 
 env:
-  solutionFile: stc/MyHomework.sln
+  solutionFile: src/MyHomework.sln
   
 on:
   push:
