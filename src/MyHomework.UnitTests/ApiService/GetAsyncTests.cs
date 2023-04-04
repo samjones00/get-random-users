@@ -1,0 +1,78 @@
+﻿using System.Net;
+using Moq;
+using MyHomework.Constants;
+using MyHomework.Models.Configuration;
+using MyHomework.Services;
+using MyHomework.UnitTests;
+using MockHttpClient;
+using MyHomework.Models;
+using FluentAssertions;
+
+namespace ApiServiceTests
+{
+    [TestFixture]
+    public class GetAsyncTests : TestBase
+    {
+        private ApiService _sut;
+        private Mock<IHttpClientFactory> _mockHttpClientFactory;
+        private ConfigurationOptions _configurationOptions;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _mockHttpClientFactory = _mockRepository.Create<IHttpClientFactory>();
+
+            _configurationOptions = MockHelper.Create<ConfigurationOptions>(x =>
+            {
+                x.UserServiceBaseUrl = "http://domain.com";
+                x.UserServiceGetEndpoint = "/api";
+            });
+        }
+
+        [Test]
+        public async Task GivenUnsuccessfulResponseShouldThrowException()
+        {
+            // Arrange
+            var mockHttpClient = new MockHttpClient.MockHttpClient();
+            mockHttpClient.BaseAddress = new Uri(_configurationOptions.UserServiceBaseUrl);
+            mockHttpClient.When(_configurationOptions.UserServiceGetEndpoint).Then(HttpStatusCode.NotFound);
+
+            _mockHttpClientFactory.Setup(x => x.CreateClient(HttpClientNames.UsersHttpClient)).Returns(mockHttpClient);
+
+            _sut = new ApiService(_mockHttpClientFactory.Object, _configurationOptions);
+
+            var mockResponse = MockHelper.Create<ApiResponse>();
+
+            // Act
+            var act = () => _sut.GetAsync(CancellationToken.None);
+
+            // Assert
+            await act.Should().ThrowAsync<HttpRequestException>();
+        }
+
+        [Test]
+        public async Task GivenUnsuccessfulResponseShouldReturnJson()
+        {
+            // Arrange
+            var mockResponse = MockHelper.Create<ApiResponse>();
+
+            var mockHttpClient = new MockHttpClient.MockHttpClient();
+            mockHttpClient.BaseAddress = new Uri(_configurationOptions.UserServiceBaseUrl);
+
+            mockHttpClient
+                .When(_configurationOptions.UserServiceGetEndpoint)
+                .Then(req => new HttpResponseMessage()
+                .WithJsonContent(mockResponse));
+
+            _mockHttpClientFactory.Setup(x => x.CreateClient(HttpClientNames.UsersHttpClient)).Returns(mockHttpClient);
+
+            _sut = new ApiService(_mockHttpClientFactory.Object, _configurationOptions);
+
+            // Act
+            var response = await _sut.GetAsync(CancellationToken.None);
+
+            // Assert
+            response.Should().NotBeNull();
+        }
+    }
+}

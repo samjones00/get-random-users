@@ -1,8 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using MyHomework.Interfaces;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
 /// <summary>
 /// We have provided you the code below for a proof of concept (PoC) console application that satisfies the following requirements:
@@ -29,36 +26,10 @@ namespace MyHomework
 {
     internal class Program
     {
-        private static IUserService _userService;
-        private static readonly CancellationTokenSource cancellationTokenSource = new();
-
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            BindServices();
-
-            try
-            {
-                Console.CancelKeyPress += (sender, eventArgs) =>
-                {
-                    Console.WriteLine("Cancel event triggered");
-                    cancellationTokenSource.Cancel();
-                    eventArgs.Cancel = true;
-                };
-
-                await _userService.Run(cancellationTokenSource.Token);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-            finally
-            {
-                cancellationTokenSource.Dispose();
-            }
-
-
-
             //Create a file
+
             HttpClient c = new HttpClient();
             HttpResponseMessage r = c.GetAsync("https://randomuser.me/api/").Result;
             string rb = r.Content.ReadAsStringAsync().Result;
@@ -108,7 +79,7 @@ namespace MyHomework
                     string s4 = o["results"][0]["email"].ToString();
                     string s5 = o["results"][0]["dob"]["age"].ToString();
 
-                    res[i] = "{\"last\":" + "\"" + s1 + "\"" + ",\"first\":" + "\"" + s2 + "\"" + ",\"city\":" + "\"" + s3 + "\"" + ",\"email\":" + "\"" + s4 + "\"" + ",\"age\":" + "\"" + s5 + "\"" + "}";
+                    res[i] = "{\"last\":" + "\""+ s1 + "\"" + ",\"first\":" + "\"" + s2 + "\"" + ",\"city\":" + "\"" + s3 + "\"" + ",\"email\":" + "\"" + s4 + "\"" + ",\"age\":" + "\"" + s5 + "\"" + "}";
 
                     if (i < 5)
                         res[i] = res[i] + ",";
@@ -117,21 +88,6 @@ namespace MyHomework
 
             res[6] = "]";
             File.WriteAllLines("c:\\temp\\MyTest.json", res);
-        }
-
-        public static void BindServices()
-        {
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                .Build();
-
-            var serviceProvider = new ServiceCollection()
-                .AddServices(configuration)
-                .BuildServiceProvider()
-                .AddLogging(configuration);
-
-            _userService = serviceProvider.GetRequiredService<IUserService>();
         }
     }
 }

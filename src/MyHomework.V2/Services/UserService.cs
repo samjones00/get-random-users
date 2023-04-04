@@ -27,15 +27,12 @@ namespace MyHomework.Services
             _logger.LogInformation("Requesting users");
             await SendRequests(cancellationToken);
 
-            _logger.LogInformation("Combining responses");
+            _logger.LogInformation("Preparing user results");
             var users = await CombineResponses();
             var mappedUsers = users.Select(x => new AppResponse.User(x.Name.Last, x.Name.First, x.Location.City, x.Email, x.DOB.Age));
-            var result = JsonConvert.SerializeObject(mappedUsers, new JsonSerializerSettings
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            });
+            var result = JsonConvert.SerializeObject(mappedUsers, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
 
-            _logger.LogInformation("Writing grouped users", result);
+            _logger.LogInformation("Writing user results", result);
             _dataProvider.WriteAsync(_configurationOptions.DataProviderOutputFileName, result, append: false, cancellationToken);
         }
 

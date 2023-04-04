@@ -1,0 +1,26 @@
+name: CI Pipeline
+
+env:
+  solutionFile: stc/MyHomework.sln
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0
+    - name: Install dependencies ${{ env.solutionFile }}
+      run: dotnet restore ${{ env.solutionFile }}
+    - name: Build
+      run: dotnet build ${{ env.solutionFile }} --configuration Release --no-restore
+    - name: Test
+      run: dotnet test ${{ env.solutionFile }} --no-restore --verbosity normal
