@@ -29,8 +29,8 @@ namespace MyHomework.Services
             var sendStatus = await SendRequests(cancellationToken);
 
             _logger.LogInformation("Preparing user results");
-            var users = await CombineResponses();
-            var mappedUsers = users.Select(x => new AppResponse.User(x.Name.Last, x.Name.First, x.Location.City, x.Email, x.DOB.Age));
+            var allUsers = await CombineResponses();
+            var mappedUsers = allUsers.Select(x => new AppResponse.User(x.Name.Last, x.Name.First, x.Location.City, x.Email, x.DOB.Age));
             var result = JsonConvert.SerializeObject(mappedUsers, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
 
             _logger.LogInformation("Writing user results", result);
@@ -40,22 +40,20 @@ namespace MyHomework.Services
         private async Task<bool> SendRequests(CancellationToken cancellationToken)
         {
             var jsonResponses = new StringBuilder();
-
             var tasks = Enumerable.Range(0, _configurationOptions.ApiCallCount)
-                .Select(async x => { jsonResponses.AppendLine(await _apiService.GetAsync(cancellationToken)); });
+                .Select(x => { return _apiService.GetAsHttpResponseAsync(cancellationToken); })
+                .ToList();
 
-            var aggregateTask = Task.WhenAll(tasks);
+            var aggregateTask = await Task.WhenAll(tasks);
 
-            try
+            if (!tasks.Any(x => x.Result.IsSuccessStatusCode))
             {
-                await aggregateTask;
+                _logger.LogError($"{tasks.Count(x => x.Result.IsSuccessStatusCode)} of {tasks.Count()} requests successful, see logs for details.");
             }
-            catch (Exception ex)
+
+            foreach (var item in tasks.Where(x => x.Result.IsSuccessStatusCode))
             {
-                if (aggregateTask.Exception != null)
-                {
-                    _logger.LogError($"{aggregateTask.Exception.InnerExceptions.Count} of {_configurationOptions.ApiCallCount} requests failed, see logs for details.");
-                }
+                jsonResponses.AppendLine(await item.Result.Content.ReadAsStringAsync());
             }
 
             await Task.WhenAll(tasks).ContinueWith(x =>
@@ -63,13 +61,16 @@ namespace MyHomework.Services
                 _dataProvider.WriteAsync(_configurationOptions.ResponsesFileName, jsonResponses.ToString(), append: false, cancellationToken);
             }, cancellationToken);
 
-            return aggregateTask.IsCompletedSuccessfully;
+            return true;
         }
 
         private async Task<IEnumerable<ApiResponse.User>> CombineResponses()
         {
-            var json = await _dataProvider.ReadAsync(_configurationOptions.ResponsesFileName);
-            var responses = json.Split(Environment.NewLine).Take(_configurationOptions.ApiCallCount);
+            var savedResponsesJson = await _dataProvider.ReadAsync(_configurationOptions.ResponsesFileName);
+
+            var responses = savedResponsesJson
+                .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+                .Take(_configurationOptions.ApiCallCount);
 
             return responses.SelectMany(x => JsonConvert.DeserializeObject<ApiResponse>(x).Results);
         }

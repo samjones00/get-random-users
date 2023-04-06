@@ -2,6 +2,7 @@
 {
     public interface IApiService
     {
-        Task<string> GetAsync(CancellationToken cancellationToken);
+        Task<HttpResponseMessage> GetAsHttpResponseAsync(CancellationToken cancellationToken);
+        Task<string> GetAsStringAsync(CancellationToken cancellationToken);
     }
 }

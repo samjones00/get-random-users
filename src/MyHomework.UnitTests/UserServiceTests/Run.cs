@@ -45,7 +45,7 @@ namespace UserServiceTests
                 "{\"last\":\"Harper\",\"first\":\"Isaac\",\"city\":\"Roscommon\",\"email\":\"isaac.harper@example.com\",\"age\":61}" +
                 "]";
 
-            _mockApiService.SetupSequence(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            _mockApiService.SetupSequence(x => x.GetAsStringAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockFirstHttpResponseJson)
                 .ReturnsAsync(mockSecondHttpResponseJson);
 
@@ -57,7 +57,7 @@ namespace UserServiceTests
             await _sut.Run(CancellationToken.None);
 
             // Assert
-            _mockApiService.Verify(x => x.GetAsync(It.IsAny<CancellationToken>()), Times.Exactly(_configurationOptions.ApiCallCount));
+            _mockApiService.Verify(x => x.GetAsStringAsync(It.IsAny<CancellationToken>()), Times.Exactly(_configurationOptions.ApiCallCount));
             _mockDataProvider.Verify(x => x.WriteAsync(_configurationOptions.ResponsesFileName, mockSavedResponsesJson, true, It.IsAny<CancellationToken>()), Times.Once);
             _mockDataProvider.Verify(x => x.ReadAsync(_configurationOptions.ResponsesFileName), Times.Once);
             _mockDataProvider.Verify(x => x.WriteAsync(_configurationOptions.OutputFileName, expectedResult, false, It.IsAny<CancellationToken>()), Times.Once);
@@ -67,7 +67,7 @@ namespace UserServiceTests
         public async Task GivenUnsuccessfulApiResponsesShouldThrowHttpRequestException()
         {
             // Arrange
-            _mockApiService.SetupSequence(x => x.GetAsync(It.IsAny<CancellationToken>()))
+            _mockApiService.SetupSequence(x => x.GetAsStringAsync(It.IsAny<CancellationToken>()))
                 //.ReturnsAsync(_fixture.Create<string>())
                 .ThrowsAsync(new ArgumentException())
                 .ThrowsAsync(new HttpRequestException());

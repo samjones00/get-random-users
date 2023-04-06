@@ -17,12 +17,18 @@ namespace MyHomework.Services
             _httpClient = httpClientFactory.CreateClient(HttpClientNames.UsersHttpClient);
         }
 
-        public async Task<string> GetAsync(CancellationToken cancellationToken)
+        public async Task<string> GetAsStringAsync(CancellationToken cancellationToken)
         {
             HttpResponseMessage response = await _httpClient.GetAsync(_options.UserServiceGetEndpoint, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadAsStringAsync(cancellationToken);
+        }
+
+        public async Task<HttpResponseMessage> GetAsHttpResponseAsync(CancellationToken cancellationToken)
+        {
+            HttpResponseMessage response = await _httpClient.GetAsync(_options.UserServiceGetEndpoint, cancellationToken);
+            return response;
         }
     }
 }

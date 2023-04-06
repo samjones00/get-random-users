@@ -42,7 +42,7 @@ namespace ApiServiceTests
             _sut = new ApiService(_mockHttpClientFactory.Object, _configurationOptions);
 
             // Act
-            var act = () => _sut.GetAsync(CancellationToken.None);
+            var act = () => _sut.GetAsHttpResponseAsync(CancellationToken.None);
 
             // Assert
             await act.Should().ThrowAsync<HttpRequestException>();
@@ -69,7 +69,7 @@ namespace ApiServiceTests
             _sut = new ApiService(_mockHttpClientFactory.Object, _configurationOptions);
 
             // Act
-            var response = await _sut.GetAsync(CancellationToken.None);
+            var response = await _sut.GetAsHttpResponseAsync(CancellationToken.None);
 
             // Assert
             response.Should().NotBeNull();

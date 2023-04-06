@@ -49,6 +49,7 @@ namespace MyHomework
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 _logger.LogError(ex.Message, ex.InnerException);
             }
             finally
