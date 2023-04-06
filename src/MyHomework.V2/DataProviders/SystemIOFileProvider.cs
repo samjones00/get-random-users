@@ -1,5 +1,8 @@
-﻿namespace MyHomework.Interfaces
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace MyHomework.Interfaces
 {
+    [ExcludeFromCodeCoverage]
     public class SystemIOFileProvider : IDataProvider
     {
         public async void WriteAsync(string fileName, string content, bool append, CancellationToken cancellationToken)

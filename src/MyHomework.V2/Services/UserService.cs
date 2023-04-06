@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Text;
+using Microsoft.Extensions.Logging;
 using MyHomework.Interfaces;
 using MyHomework.Models;
 using MyHomework.Models.Configuration;
@@ -25,7 +26,7 @@ namespace MyHomework.Services
         public async Task Run(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Requesting users");
-            await SendRequests(cancellationToken);
+            var sendStatus = await SendRequests(cancellationToken);
 
             _logger.LogInformation("Preparing user results");
             var users = await CombineResponses();
@@ -36,13 +37,33 @@ namespace MyHomework.Services
             _dataProvider.WriteAsync(_configurationOptions.OutputFileName, result, append: false, cancellationToken);
         }
 
-        private async Task SendRequests(CancellationToken cancellationToken)
+        private async Task<bool> SendRequests(CancellationToken cancellationToken)
         {
-            for (int i = 0; i < _configurationOptions.ApiCallCount; i++)
+            var jsonResponses = new StringBuilder();
+
+            var tasks = Enumerable.Range(0, _configurationOptions.ApiCallCount)
+                .Select(async x => { jsonResponses.AppendLine(await _apiService.GetAsync(cancellationToken)); });
+
+            var aggregateTask = Task.WhenAll(tasks);
+
+            try
             {
-                var response = await _apiService.GetAsync(cancellationToken);
-                _dataProvider.WriteAsync(_configurationOptions.ResponsesFileName, response, append: true, cancellationToken);
+                await aggregateTask;
             }
+            catch (Exception ex)
+            {
+                if (aggregateTask.Exception != null)
+                {
+                    _logger.LogError($"{aggregateTask.Exception.InnerExceptions.Count} of {_configurationOptions.ApiCallCount} requests failed, see logs for details.");
+                }
+            }
+
+            await Task.WhenAll(tasks).ContinueWith(x =>
+            {
+                _dataProvider.WriteAsync(_configurationOptions.ResponsesFileName, jsonResponses.ToString(), append: false, cancellationToken);
+            }, cancellationToken);
+
+            return aggregateTask.IsCompletedSuccessfully;
         }
 
         private async Task<IEnumerable<ApiResponse.User>> CombineResponses()

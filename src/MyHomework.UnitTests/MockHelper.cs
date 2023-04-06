@@ -4,7 +4,7 @@ namespace MyHomework.UnitTests
 {
     public static class MockHelper
     {
-        public static T Create<T>(params Action<T>[] properties) where T : new()
+        public static T Create<T>(params Action<T>[] properties) where T : class
         {
             var result = new Fixture().Create<T>();
 

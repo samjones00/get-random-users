@@ -37,6 +37,9 @@ The configuration is configured via the appsettings.json file:
 }
 ```
 
-
 ## Logs
 Text file logs are saved to get-random-users\src\MyHomework.V2\bin\Debug\net6.0\Logs
+
+## Next steps
+* Add `Microsoft.Extensions.Http.Polly` for handling transient faults when making http requests
+* A possible refactor to use Task.WhenAll() instead of awaiting multiple calls to the API in a loop (https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/task-based-asynchronous-programming)

@@ -30,7 +30,7 @@ namespace ApiServiceTests
         }
 
         [Test]
-        public async Task GivenUnsuccessfulResponseShouldThrowException()
+        public async Task GivenUnsuccessfulResponseShouldThrowHttpRequestException()
         {
             // Arrange
             var mockHttpClient = new MockHttpClient.MockHttpClient();
