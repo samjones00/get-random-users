@@ -23,20 +23,18 @@ namespace MyHomework
             services.AddSingleton(_ => config);
             services.AddTransient<IApiService, ApiService>();
             services.AddTransient<IUserService, UserService>();
-            services.AddSingleton<IDataProvider, SystemIOFileProvider>();
-
-            services.AddLogging(builder =>
-            {
-                builder.AddConsole();
-            });
+            services.AddTransient<IFileProvider, SystemIOFileProvider>();
 
             return services;
         }
 
-        public static ServiceProvider AddLogging(this ServiceProvider serviceProvider, IConfiguration configuration)
+        public static ServiceProvider AddLogging(this ServiceProvider serviceProvider)
         {
             var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
-            loggerFactory.AddFile(configuration["Logging:LogFilePath"].ToString());
+            var config = serviceProvider.GetService<ConfigurationOptions>();
+
+            ArgumentNullException.ThrowIfNull(config?.LogFileName);
+            loggerFactory.AddFile(@config.LogFileName);
 
             return serviceProvider;
         }

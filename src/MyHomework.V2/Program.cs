@@ -58,7 +58,7 @@ namespace MyHomework
             }
         }
 
-        public static void BindServices()
+        private static void BindServices()
         {
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
@@ -68,7 +68,7 @@ namespace MyHomework
             var serviceProvider = new ServiceCollection()
                 .AddServices(configuration)
                 .BuildServiceProvider()
-                .AddLogging(configuration);
+                .AddLogging();
 
             _userService = serviceProvider.GetRequiredService<IUserService>();
             _logger = serviceProvider.GetRequiredService<ILogger<Program>>();

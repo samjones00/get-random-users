@@ -13,6 +13,7 @@
 ## Getting started
 * Clone the repository
 * Open the solution in Visual Studio
+* Ensure that MyHomework.V2 is set as the startup project
 * Run the application
 
 ## Configuration
@@ -24,15 +25,15 @@ The configuration is configured via the appsettings.json file:
       "Default": "Debug",
       "Microsoft": "Warning",
       "Microsoft.Hosting.Lifetime": "Information"
-    },
-    "LogFilePath": "Logs\\log-{Date}.txt"
+    }
   },
   "Options": {
     "userServiceBaseUrl": "https://randomuser.me/",
     "UserServiceGetEndpoint": "/api",
     "ResponsesFileName": "c:\\temp\\MyTest-V2.txt",
     "OutputFileName": "c:\\temp\\MyTest-V2.json",
-    "ApiCallCount": 5
+    "ApiCallCount": 5,
+    "LogFileName": "c:\\temp\\log-{Date}.txt"
   }
 }
 ```
@@ -42,4 +43,5 @@ Text file logs are saved to get-random-users\src\MyHomework.V2\bin\Debug\net6.0\
 
 ## Next steps
 * Add `Microsoft.Extensions.Http.Polly` for handling transient faults when making http requests
+* Add config validation to warn of invalid values on app start, probably using fluent validator.
 * A possible refactor to use Task.WhenAll() instead of awaiting multiple calls to the API in a loop (https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/task-based-asynchronous-programming)
