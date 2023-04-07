@@ -13,7 +13,7 @@ namespace UserServiceTests
     {
         private UserService _sut;
         private NullLogger<UserService> _logger;
-        private Mock<IDataProvider> _mockDataProvider;
+        private Mock<IFileProvider> _mockDataProvider;
         private Mock<IApiService> _mockApiService;
         private ConfigurationOptions _configurationOptions;
 
@@ -21,7 +21,7 @@ namespace UserServiceTests
         public void SetUp()
         {
             _logger = new NullLogger<UserService>();
-            _mockDataProvider = _mockRepository.Create<IDataProvider>();
+            _mockDataProvider = _mockRepository.Create<IFileProvider>();
             _mockApiService = _mockRepository.Create<IApiService>();
 
             _configurationOptions = MockHelper.Create<ConfigurationOptions>(x =>

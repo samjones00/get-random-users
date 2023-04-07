@@ -3,9 +3,9 @@
 namespace MyHomework.Interfaces
 {
     [ExcludeFromCodeCoverage]
-    public class SystemIOFileProvider : IDataProvider
+    public class SystemIOFileProvider : IFileProvider
     {
-        public async void WriteAsync(string fileName, string content, bool append, CancellationToken cancellationToken)
+        public async Task WriteAsync(string fileName, string content, bool append, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(fileName);
             ArgumentNullException.ThrowIfNull(content);

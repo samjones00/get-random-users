@@ -47,6 +47,10 @@ namespace MyHomework
 
                 await _userService.Run(cancellationTokenSource.Token);
             }
+            catch(TaskCanceledException)
+            {
+                Console.WriteLine("Shutting down...");
+            }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);

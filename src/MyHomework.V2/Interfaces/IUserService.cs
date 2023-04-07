@@ -1,4 +1,6 @@
-﻿namespace MyHomework.Interfaces
+﻿using MyHomework.Models;
+
+namespace MyHomework.Interfaces
 {
     internal interface IUserService
     {

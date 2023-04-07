@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MyHomework.Interfaces;
 using MyHomework.Models;
@@ -11,11 +13,11 @@ namespace MyHomework.Services
     public class UserService : IUserService
     {
         private readonly IApiService _apiService;
-        private readonly IDataProvider _dataProvider;
+        private readonly IFileProvider _dataProvider;
         private readonly ILogger<UserService> _logger;
         private readonly ConfigurationOptions _configurationOptions;
 
-        public UserService(IApiService apiService, IDataProvider dataProvider, ILogger<UserService> logger, ConfigurationOptions configurationOptions)
+        public UserService(IApiService apiService, IFileProvider dataProvider, ILogger<UserService> logger, ConfigurationOptions configurationOptions)
         {
             _apiService = apiService ?? throw new ArgumentNullException(nameof(apiService));
             _dataProvider = dataProvider ?? throw new ArgumentNullException(nameof(dataProvider));
@@ -26,42 +28,64 @@ namespace MyHomework.Services
         public async Task Run(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Requesting users");
-            var sendStatus = await SendRequests(cancellationToken);
+            var json = await SendRequests(cancellationToken);
+            await _dataProvider.WriteAsync(_configurationOptions.ResponsesFileName, json, append: false, cancellationToken);
 
             _logger.LogInformation("Preparing user results");
             var allUsers = await CombineResponses();
             var mappedUsers = allUsers.Select(x => new AppResponse.User(x.Name.Last, x.Name.First, x.Location.City, x.Email, x.DOB.Age));
-            var result = JsonConvert.SerializeObject(mappedUsers, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
+            var result = Serialize(mappedUsers);
 
-            _logger.LogInformation("Writing user results", result);
-            _dataProvider.WriteAsync(_configurationOptions.OutputFileName, result, append: false, cancellationToken);
+            _logger.LogInformation("Saving user results", result);
+            await _dataProvider.WriteAsync(_configurationOptions.OutputFileName, result, append: false, cancellationToken);
         }
 
-        private async Task<bool> SendRequests(CancellationToken cancellationToken)
+        //private async Task<string> SendRequests(CancellationToken cancellationToken)
+        //{
+        //    var tasks = Enumerable.Range(0, _configurationOptions.ApiCallCount)
+        //        .Select(x => { return _apiService.GetAsHttpResponseAsync(cancellationToken); })
+        //        .ToList();
+
+        //    await Task.WhenAll(tasks);
+
+        //    if (!tasks.Any(x => x.Result.IsSuccessStatusCode))
+        //    {
+        //        _logger.LogError($"{tasks.Count(x => x.Result.IsSuccessStatusCode)} of {tasks.Count()} requests successful, see logs for details.");
+        //    }
+
+
+        //    var jsonResponses = new StringBuilder();
+
+        //    foreach (var item in tasks.Where(x => x.Result.IsSuccessStatusCode))
+        //    {
+        //        jsonResponses.AppendLine(await item.Result.Content.ReadAsStringAsync(cancellationToken));
+        //    }
+
+        //    return jsonResponses.ToString();
+        //}
+
+
+        private async Task<string> SendRequests(CancellationToken cancellationToken)
         {
-            var jsonResponses = new StringBuilder();
             var tasks = Enumerable.Range(0, _configurationOptions.ApiCallCount)
-                .Select(x => { return _apiService.GetAsHttpResponseAsync(cancellationToken); })
-                .ToList();
+                 .Select(x => _apiService.GetAsHttpResponseAsync(cancellationToken))
+                 .ToList();
 
-            var aggregateTask = await Task.WhenAll(tasks);
+            var responses = await Task.WhenAll(tasks);
 
-            if (!tasks.Any(x => x.Result.IsSuccessStatusCode))
+            if (responses.Any(x => !x.IsSuccessStatusCode))
             {
                 _logger.LogError($"{tasks.Count(x => x.Result.IsSuccessStatusCode)} of {tasks.Count()} requests successful, see logs for details.");
             }
 
-            foreach (var item in tasks.Where(x => x.Result.IsSuccessStatusCode))
+            var jsonResponses = new StringBuilder();
+
+            foreach (var response in responses.Where(x => x.IsSuccessStatusCode))
             {
-                jsonResponses.AppendLine(await item.Result.Content.ReadAsStringAsync());
+                jsonResponses.AppendLine(await response.Content.ReadAsStringAsync(cancellationToken));
             }
 
-            await Task.WhenAll(tasks).ContinueWith(x =>
-            {
-                _dataProvider.WriteAsync(_configurationOptions.ResponsesFileName, jsonResponses.ToString(), append: false, cancellationToken);
-            }, cancellationToken);
-
-            return true;
+            return jsonResponses.ToString();
         }
 
         private async Task<IEnumerable<ApiResponse.User>> CombineResponses()
@@ -74,5 +98,11 @@ namespace MyHomework.Services
 
             return responses.SelectMany(x => JsonConvert.DeserializeObject<ApiResponse>(x).Results);
         }
+
+        private static string Serialize(object source) => JsonConvert.SerializeObject(source, new JsonSerializerSettings
+        {
+            Formatting = Formatting.Indented,
+            ContractResolver = new CamelCasePropertyNamesContractResolver()
+        });
     }
 }
