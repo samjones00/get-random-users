@@ -1,9 +1,7 @@
-﻿using MyHomework.Models;
-
-namespace MyHomework.Interfaces
+﻿namespace MyHomework.Interfaces
 {
     internal interface IUserService
     {
-        Task Run(CancellationToken cancellationToken);
+        Task GetAndSaveUsers(CancellationToken cancellationToken);
     }
 }

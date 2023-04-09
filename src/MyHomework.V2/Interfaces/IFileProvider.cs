@@ -3,6 +3,6 @@
     public interface IFileProvider
     {
         Task<string> ReadAsync(string fileName);
-        Task WriteAsync(string fileName, string content, bool append, CancellationToken cancellationToken);
+        Task WriteAsync(string fileName, string content, CancellationToken cancellationToken);
     }
 }

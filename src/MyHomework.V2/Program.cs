@@ -45,9 +45,9 @@ namespace MyHomework
                     eventArgs.Cancel = true;
                 };
 
-                await _userService.Run(cancellationTokenSource.Token);
+                await _userService.GetAndSaveUsers(cancellationTokenSource.Token);
             }
-            catch(TaskCanceledException)
+            catch (TaskCanceledException)
             {
                 Console.WriteLine("Shutting down...");
             }

@@ -3,11 +3,12 @@
 # Get Random Users
 
 ## Features
-
-* Filenames and number of requests are configurable
+* Filenames, number of requests, etc are configurable
 * Moved all code into their own services to make it easier to test
 * Added unit tests for the services
-* Text file logging
+* Added DelegatingHandler to handle http client logging
+* Added text file logging
+* Added rate limiting, as making 5 requests in parallel was hitting the rate limit and causing a 502 to be returned
 * Escaping the application (<kbd>CTRL</kbd>+<kbd>C</kbd>) terminates the async requests and application gracefully
 
 ## Getting started
@@ -17,7 +18,7 @@
 * Run the application
 
 ## Configuration
-The configuration is configured via the appsettings.json file:
+The configuration is read from the appsettings.json file:
 ```json
 {
   "Logging": {
@@ -28,20 +29,16 @@ The configuration is configured via the appsettings.json file:
     }
   },
   "Options": {
-    "userServiceBaseUrl": "https://randomuser.me/",
-    "UserServiceGetEndpoint": "/api",
-    "ResponsesFileName": "c:\\temp\\MyTest-V2.txt",
-    "OutputFileName": "c:\\temp\\MyTest-V2.json",
-    "ApiCallCount": 5,
-    "LogFileName": "c:\\temp\\log-{Date}.txt"
+    "LogFilePath": "c:\\temp\\log-{Date}.txt",
+    "MaxParallelization": 4,
+    "OutputFilePath": "c:\\temp\\MyTest-V2.json",
+    "RequestCount": 5,
+    "ResponsesFilePath": "c:\\temp\\MyTest-V2.txt",
+    "UserServiceUrl": "https://randomuser.me/api/"
   }
 }
 ```
 
-## Logs
-Text file logs are saved to get-random-users\src\MyHomework.V2\bin\Debug\net6.0\Logs
-
 ## Next steps
-* Add `Microsoft.Extensions.Http.Polly` for handling transient faults when making http requests
-* Add config validation to warn of invalid values on app start, probably using fluent validator.
-* A possible refactor to use Task.WhenAll() instead of awaiting multiple calls to the API in a loop (https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/task-based-asynchronous-programming)
+* Add transient fault handling using `Polly`
+* Add appsettings validation to warn of invalid values on app start, using `Microsoft.Extensions.Options.DataAnnotations` or `FluentValidation`

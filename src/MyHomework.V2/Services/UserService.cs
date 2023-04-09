@@ -1,12 +1,11 @@
-﻿using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using MyHomework.Interfaces;
 using MyHomework.Models;
 using MyHomework.Models.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using static MyHomework.Models.AppResponse;
 
 namespace MyHomework.Services
 {
@@ -25,83 +24,65 @@ namespace MyHomework.Services
             _configurationOptions = configurationOptions ?? throw new ArgumentNullException(nameof(configurationOptions));
         }
 
-        public async Task Run(CancellationToken cancellationToken)
+        public async Task GetAndSaveUsers(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Requesting users");
-            var json = await SendRequests(cancellationToken);
-            await _dataProvider.WriteAsync(_configurationOptions.ResponsesFileName, json, append: false, cancellationToken);
+            _logger.LogInformation("Getting users and returning content responses");
+            var userResponses = await GetUsers(cancellationToken);
+
+            _logger.LogInformation("Saving API responses");
+            await _dataProvider.WriteAsync(_configurationOptions.ResponsesFilePath, userResponses, cancellationToken);
 
             _logger.LogInformation("Preparing user results");
-            var allUsers = await CombineResponses();
-            var mappedUsers = allUsers.Select(x => new AppResponse.User(x.Name.Last, x.Name.First, x.Location.City, x.Email, x.DOB.Age));
+            var allResponses = await CombineApiResponses();
+            var mappedUsers = MapUsers(allResponses);
             var result = Serialize(mappedUsers);
 
             _logger.LogInformation("Saving user results", result);
-            await _dataProvider.WriteAsync(_configurationOptions.OutputFileName, result, append: false, cancellationToken);
+            await _dataProvider.WriteAsync(_configurationOptions.OutputFilePath, result, cancellationToken);
         }
 
-        //private async Task<string> SendRequests(CancellationToken cancellationToken)
-        //{
-        //    var tasks = Enumerable.Range(0, _configurationOptions.ApiCallCount)
-        //        .Select(x => { return _apiService.GetAsHttpResponseAsync(cancellationToken); })
-        //        .ToList();
-
-        //    await Task.WhenAll(tasks);
-
-        //    if (!tasks.Any(x => x.Result.IsSuccessStatusCode))
-        //    {
-        //        _logger.LogError($"{tasks.Count(x => x.Result.IsSuccessStatusCode)} of {tasks.Count()} requests successful, see logs for details.");
-        //    }
-
-
-        //    var jsonResponses = new StringBuilder();
-
-        //    foreach (var item in tasks.Where(x => x.Result.IsSuccessStatusCode))
-        //    {
-        //        jsonResponses.AppendLine(await item.Result.Content.ReadAsStringAsync(cancellationToken));
-        //    }
-
-        //    return jsonResponses.ToString();
-        //}
-
-
-        private async Task<string> SendRequests(CancellationToken cancellationToken)
+        private async Task<string> GetUsers(CancellationToken cancellationToken)
         {
-            var tasks = Enumerable.Range(0, _configurationOptions.ApiCallCount)
-                 .Select(x => _apiService.GetAsHttpResponseAsync(cancellationToken))
+            var tasks = Enumerable.Range(0, _configurationOptions.RequestCount)
+                 .Select(x => _apiService.GetHttpResponseMessageAsync(cancellationToken))
                  .ToList();
 
-            var responses = await Task.WhenAll(tasks);
-
-            if (responses.Any(x => !x.IsSuccessStatusCode))
+            await Task.WhenAll(tasks);
+            if (tasks.Any(x => !x.Result.IsSuccessStatusCode))
             {
-                _logger.LogError($"{tasks.Count(x => x.Result.IsSuccessStatusCode)} of {tasks.Count()} requests successful, see logs for details.");
+                _logger.LogError($"{tasks.Count(x => x.Result.IsSuccessStatusCode)} of {tasks.Count} requests successful, see logs for details.");
             }
 
             var jsonResponses = new StringBuilder();
-
-            foreach (var response in responses.Where(x => x.IsSuccessStatusCode))
+            foreach (var result in tasks.Select(x => x.Result).Where(x => x.IsSuccessStatusCode))
             {
-                jsonResponses.AppendLine(await response.Content.ReadAsStringAsync(cancellationToken));
+                jsonResponses.AppendLine(await result.Content.ReadAsStringAsync(cancellationToken));
             }
 
             return jsonResponses.ToString();
         }
 
-        private async Task<IEnumerable<ApiResponse.User>> CombineResponses()
+        private async Task<IEnumerable<ApiResponse.User>> CombineApiResponses()
         {
-            var savedResponsesJson = await _dataProvider.ReadAsync(_configurationOptions.ResponsesFileName);
+            var savedResponsesJson = await _dataProvider.ReadAsync(_configurationOptions.ResponsesFilePath);
 
-            var responses = savedResponsesJson
+            if (string.IsNullOrWhiteSpace(savedResponsesJson))
+            {
+                return Enumerable.Empty<ApiResponse.User>();
+            }
+
+            return savedResponsesJson
                 .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
-                .Take(_configurationOptions.ApiCallCount);
-
-            return responses.SelectMany(x => JsonConvert.DeserializeObject<ApiResponse>(x).Results);
+                .Take(_configurationOptions.RequestCount)
+                .Select(JsonConvert.DeserializeObject<ApiResponse>)
+                .SelectMany(x => x.Results);
         }
+
+        private static IEnumerable<User> MapUsers(IEnumerable<ApiResponse.User> source) =>
+            source.Select(x => new User(x.Name.Last, x.Name.First, x.Location.City, x.Email, x.DOB.Age));
 
         private static string Serialize(object source) => JsonConvert.SerializeObject(source, new JsonSerializerSettings
         {
-            Formatting = Formatting.Indented,
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         });
     }

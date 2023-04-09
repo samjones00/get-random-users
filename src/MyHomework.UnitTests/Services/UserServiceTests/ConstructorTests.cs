@@ -1,14 +1,14 @@
 using MyHomework.Services;
 using MyHomework.UnitTests;
 
-namespace ApiServiceTests
+namespace UserServiceTests
 {
-    public class Tests : TestBase
+    public class ConstructorTests : TestBase
     {
         [Test]
         public void Constructor()
         {
-            RunGuardClauseChecks<ApiService>();
+            RunGuardClauseChecks<UserService>();
         }
     }
 }

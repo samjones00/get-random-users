@@ -8,7 +8,7 @@ namespace MyHomework.Handlers
 
         public LoggingHandler(ILogger<LoggingHandler> logger)
         {
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

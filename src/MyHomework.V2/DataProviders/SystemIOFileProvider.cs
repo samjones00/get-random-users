@@ -5,7 +5,7 @@ namespace MyHomework.Interfaces
     [ExcludeFromCodeCoverage]
     public class SystemIOFileProvider : IFileProvider
     {
-        public async Task WriteAsync(string fileName, string content, bool append, CancellationToken cancellationToken)
+        public async Task WriteAsync(string fileName, string content, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(fileName);
             ArgumentNullException.ThrowIfNull(content);
@@ -13,8 +13,8 @@ namespace MyHomework.Interfaces
 
             CreateDirectoryIfNotExists(fileName);
 
-            using StreamWriter streamWriter = new(fileName, append);
-            await streamWriter.WriteLineAsync(content.ToCharArray(), cancellationToken);
+            using StreamWriter streamWriter = new(fileName, false);
+            await streamWriter.WriteAsync(content.ToCharArray(), cancellationToken);
         }
 
         public async Task<string> ReadAsync(string fileName)

@@ -6,6 +6,7 @@ using MyHomework.Handlers;
 using MyHomework.Interfaces;
 using MyHomework.Models.Configuration;
 using MyHomework.Services;
+using Polly;
 
 namespace MyHomework
 {
@@ -15,15 +16,13 @@ namespace MyHomework
         {
             var config = configuration.GetSection(ConfigurationOptions.SectionName).Get<ConfigurationOptions>();
 
-            services
-                .AddHttpClient(HttpClientNames.UsersHttpClient, x => { x.BaseAddress = new Uri(config.UserServiceBaseUrl); })
-                .AddHttpMessageHandler<LoggingHandler>();
+            services.AddHttpClient(config);
 
             services.AddSingleton<LoggingHandler>();
             services.AddSingleton(_ => config);
             services.AddTransient<IApiService, ApiService>();
             services.AddTransient<IUserService, UserService>();
-            services.AddTransient<IFileProvider, SystemIOFileProvider>();
+            services.AddSingleton<IFileProvider, SystemIOFileProvider>();
 
             return services;
         }
@@ -33,10 +32,22 @@ namespace MyHomework
             var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
             var config = serviceProvider.GetService<ConfigurationOptions>();
 
-            ArgumentNullException.ThrowIfNull(config?.LogFileName);
-            loggerFactory.AddFile(@config.LogFileName);
+            ArgumentNullException.ThrowIfNull(config?.LogFilePath);
+            loggerFactory.AddFile(@config.LogFilePath);
 
             return serviceProvider;
+        }
+
+        private static IServiceCollection AddHttpClient(this IServiceCollection services, ConfigurationOptions config)
+        {
+            var throttlingPolicy = Policy.BulkheadAsync<HttpResponseMessage>(config.MaxParallelization, int.MaxValue);
+
+            services
+                .AddHttpClient(HttpClientNames.UsersHttpClient, x => { x.BaseAddress = new Uri(config.UserServiceUrl); })
+                .AddPolicyHandler(throttlingPolicy)
+                .AddHttpMessageHandler<LoggingHandler>();
+
+            return services;
         }
     }
 }
